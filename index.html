@@ -1350,8 +1350,14 @@ Example: [{"code":"OP05-067","name":"Zoro SP","variant":"SP","grade":"raw","mark
     }
 
     const data   = await resp.json();
-    const raw    = (data.content?.[0]?.text || '').replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(raw);
+    const rawText = (data.content?.[0]?.text || '').trim();
+
+    // Extract JSON array from response — Claude sometimes adds explanation text
+    let parsed = [];
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      try { parsed = JSON.parse(jsonMatch[0]); } catch(e) { parsed = []; }
+    }
 
     showLoading(false);
 
@@ -1359,7 +1365,7 @@ Example: [{"code":"OP05-067","name":"Zoro SP","variant":"SP","grade":"raw","mark
       document.getElementById('resultsStack').innerHTML = `
         <div class="scan-summary">
           <div class="scan-summary-title">No watchlist cards found</div>
-          <div class="scan-summary-sub">Try a clearer photo with visible card names and price tags.</div>
+          <div class="scan-summary-sub">None of the cards visible matched your watchlist. Try getting closer, reducing glare, or making sure price tags are visible.</div>
         </div>`;
       return;
     }
