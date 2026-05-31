@@ -300,6 +300,17 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 .photo-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6;}
 #photoFileInput{display:none;}
 
+/* ── PHOTO TIPS ── */
+.photo-tips{margin:10px 16px 0;background:rgba(108,99,255,.07);
+  border:1px solid rgba(108,99,255,.2);border-radius:10px;padding:11px 13px;display:none;}
+.photo-tips.show{display:block;}
+.photo-tips-title{font-size:10px;color:var(--accent);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:8px;font-weight:600;}
+.photo-tips-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.tip-item{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--muted);line-height:1.5;}
+.tip-icon{font-size:13px;flex-shrink:0;margin-top:1px;}
+.tip-item strong{color:var(--text);font-weight:500;}
+
 /* ── VOICE SECTION (wrap for toggle) ── */
 .voice-section{display:block;}
 .voice-section.hide{display:none;}
@@ -445,6 +456,19 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 
   </div><!-- /voice-section -->
 
+  <!-- Photo tips — shown in table scan mode -->
+  <div class="photo-tips" id="photoTips">
+    <div class="photo-tips-title">📸 Tips for best results</div>
+    <div class="photo-tips-grid">
+      <div class="tip-item"><span class="tip-icon">🎯</span><div><strong>4-6 cards max</strong> per photo — codes get unreadable beyond that</div></div>
+      <div class="tip-item"><span class="tip-icon">📏</span><div><strong>30-40cm away</strong> — close enough to read card text clearly</div></div>
+      <div class="tip-item"><span class="tip-icon">💡</span><div><strong>Angle slightly</strong> to reduce glare on foil and SP cards</div></div>
+      <div class="tip-item"><span class="tip-icon">🏷️</span><div><strong>Price tags visible</strong> — lay them flat next to cards</div></div>
+      <div class="tip-item"><span class="tip-icon">📱</span><div><strong>Portrait orientation</strong> works better for a row of cards</div></div>
+      <div class="tip-item"><span class="tip-icon">☀️</span><div><strong>Natural light</strong> or diffuse lighting — avoid direct overhead spots</div></div>
+    </div>
+  </div>
+
   <!-- Photo section -->
   <div class="photo-section" id="photoSection">
     <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoFileInput').click()"
@@ -455,7 +479,7 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
       <p><strong>Tap to take a photo or upload</strong><br>Camera roll, files, or drag and drop</p>
     </div>
     <img class="photo-preview" id="photoPreview" alt="Selected photo">
-    <input type="file" id="photoFileInput" accept="image/*" capture="environment" onchange="handlePhotoSelect(event)">
+    <input type="file" id="photoFileInput" accept="image/*" onchange="handlePhotoSelect(event)">
     <p class="photo-hint">Point at the vendor's table — I'll find your watchlist cards and check their prices</p>
     <div class="action-row" style="margin-top:10px;">
       <button class="btn btn-primary" id="scanPhotoBtn" onclick="doPhotoScan()" disabled>Scan photo</button>
@@ -768,13 +792,25 @@ Return ONLY a valid JSON array.
 
 Input: "${input}"
 
-For each card:
+IMPORTANT - Card code reconstruction:
+Speech-to-text often mangles card codes. Reconstruct them using these rules:
+- "oh pee" or "OP" = "OP" prefix
+- "pee" alone at start = "P" for promos
+- "ee bee" or "EB" = "EB" prefix
+- "es tee" or "ST" = "ST" prefix
+- Numbers: "zero five" = 05, "one two zero" = 120, "sixty seven" = 067, "oh six seven" = 067
+- Dash between prefix and numbers: "OP zero five zero six seven" = "OP05-067"
+- "P seventy five" or "pee seven five" = "P-075"
+- Always format as PREFIX + 2-digit set + dash + 3-digit card: e.g. OP05-067, EB01-012
+- For promos: P- + 3 digits: e.g. P-075, P-083
+
+For each card extract:
 - market: "JP" or "EN". null if unclear.
 - game: "OP" One Piece, "PK" Pokemon. Default "OP".
-- code: card code e.g. OP05-067, P-075, EB01-012. null if unclear.
+- code: reconstructed card code. null only if truly unrecognisable.
 - variant: "base"|"manga"|"alt art"|"SP"|"full art"|"secret rare". Default "base".
 - grade: "raw" or "PSA 10". null if unclear.
-- vendor_ask: price number only. null if not stated.
+- vendor_ask: price number only (words like "five hundred" = 500). null if not stated.
 - name: card name if mentioned, else null.
 
 Return array even for single card:
@@ -1199,6 +1235,7 @@ function setMode(mode) {
   currentMode = mode;
   document.getElementById('voiceSection').classList.toggle('hide', mode !== 'voice');
   document.getElementById('photoSection').classList.toggle('show',  mode === 'photo');
+  document.getElementById('photoTips').classList.toggle('show',    mode === 'photo');
   document.getElementById('modeVoice').classList.toggle('active', mode === 'voice');
   document.getElementById('modePhoto').classList.toggle('active', mode === 'photo');
   clearResults(); hideError();
