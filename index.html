@@ -311,7 +311,7 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 .tip-icon{font-size:13px;flex-shrink:0;margin-top:1px;}
 .tip-item strong{color:var(--text);font-weight:500;}
 
-/* ── VOICE SECTION (wrap for toggle) ── */
+/* ── VOICE SECTION ── */
 .voice-section{display:block;}
 .voice-section.hide{display:none;}
 
@@ -326,7 +326,6 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 .session-item.expanded{border-color:var(--accent);}
 .si-expand{display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;}
 .si-expand.open{display:block;}
-.neg-panel{}
 .neg-action{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
 .neg-action-icon{font-size:22px;flex-shrink:0;line-height:1;}
 .neg-action-body{flex:1;}
@@ -384,10 +383,10 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
     <div class="config-body" id="configBody">
       <label>Claude API Key</label>
       <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
-      <label>Sheet CSV URL</label>
-      <input type="text" id="sheetUrl" placeholder="Paste from Apps Script → Get CSV URL">
-      <label>Web App URL (for session saves)</label>
-      <input type="text" id="webAppUrl" placeholder="Paste from Apps Script → Get Web App URL">
+      <label>Supabase URL</label>
+      <input type="text" id="supabaseUrl" placeholder="https://xxxx.supabase.co">
+      <label>Supabase Anon Key</label>
+      <input type="password" id="supabaseKey" placeholder="eyJ..." autocomplete="off">
     </div>
   </div>
 
@@ -436,36 +435,34 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 
   <!-- Voice section -->
   <div class="voice-section" id="voiceSection">
-  <!-- Mic -->
-  <div class="mic-section">
-    <button class="mic-btn" id="micBtn" onclick="toggleMic()">
-      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 11a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.93V21h-2v-3.07A7 7 0 0 1 5 11H7z"/></svg>
-    </button>
-    <div class="voice-hint">
-      <code>JP · One Piece · OP05-067 · SP · raw · five hundred</code><br>
-      Multi: add <code>and [next card]</code>
+    <div class="mic-section">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 11a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.93V21h-2v-3.07A7 7 0 0 1 5 11H7z"/></svg>
+      </button>
+      <div class="voice-hint">
+        <code>JP · One Piece · OP05-067 · SP · raw · five hundred</code><br>
+        Multi: add <code>and [next card]</code>
+      </div>
+    </div>
+
+    <div class="transcript-box" id="transcriptBox">Tap the mic and speak…</div>
+
+    <div class="action-row">
+      <button class="btn btn-primary" id="lookupBtn" onclick="doLookup()" disabled>Look up</button>
+      <button class="btn btn-ghost" onclick="clearAll()">✕</button>
     </div>
   </div>
 
-  <div class="transcript-box" id="transcriptBox">Tap the mic and speak…</div>
-
-  <div class="action-row">
-    <button class="btn btn-primary" id="lookupBtn" onclick="doLookup()" disabled>Look up</button>
-    <button class="btn btn-ghost" onclick="clearAll()">✕</button>
-  </div>
-
-  </div><!-- /voice-section -->
-
-  <!-- Photo tips — shown in table scan mode -->
+  <!-- Photo tips -->
   <div class="photo-tips" id="photoTips">
     <div class="photo-tips-title">📸 Tips for best results</div>
     <div class="photo-tips-grid">
-      <div class="tip-item"><span class="tip-icon">🎯</span><div><strong>4-6 cards max</strong> per photo — codes get unreadable beyond that</div></div>
-      <div class="tip-item"><span class="tip-icon">📏</span><div><strong>30-40cm away</strong> — close enough to read card text clearly</div></div>
-      <div class="tip-item"><span class="tip-icon">💡</span><div><strong>Angle slightly</strong> to reduce glare on foil and SP cards</div></div>
-      <div class="tip-item"><span class="tip-icon">🏷️</span><div><strong>Price tags visible</strong> — lay them flat next to cards</div></div>
-      <div class="tip-item"><span class="tip-icon">📱</span><div><strong>Portrait orientation</strong> works better for a row of cards</div></div>
-      <div class="tip-item"><span class="tip-icon">☀️</span><div><strong>Natural light</strong> or diffuse lighting — avoid direct overhead spots</div></div>
+      <div class="tip-item"><span class="tip-icon">🎯</span><div><strong>4-6 cards max</strong> per photo</div></div>
+      <div class="tip-item"><span class="tip-icon">📏</span><div><strong>30-40cm away</strong> for readable text</div></div>
+      <div class="tip-item"><span class="tip-icon">💡</span><div><strong>Angle slightly</strong> to reduce foil glare</div></div>
+      <div class="tip-item"><span class="tip-icon">🏷️</span><div><strong>Price tags visible</strong> next to cards</div></div>
+      <div class="tip-item"><span class="tip-icon">📱</span><div><strong>Portrait</strong> works best</div></div>
+      <div class="tip-item"><span class="tip-icon">☀️</span><div><strong>Natural light</strong> over direct spots</div></div>
     </div>
   </div>
 
@@ -480,7 +477,7 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
     </div>
     <img class="photo-preview" id="photoPreview" alt="Selected photo">
     <input type="file" id="photoFileInput" accept="image/*" onchange="handlePhotoSelect(event)">
-    <p class="photo-hint">Point at the vendor's table — I'll find your watchlist cards and check their prices</p>
+    <p class="photo-hint">Point at the vendor's table — I'll find your watchlist cards and check prices</p>
     <div class="action-row" style="margin-top:10px;">
       <button class="btn btn-primary" id="scanPhotoBtn" onclick="doPhotoScan()" disabled>Scan photo</button>
       <button class="btn btn-ghost" onclick="clearPhoto()">✕</button>
@@ -526,108 +523,144 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 let recognition  = null;
 let isListening  = false;
 let transcript   = '';
-let priceData    = [];
+let priceData    = [];   // loaded from Supabase latest_prices view
 let pendingCards = [];
 let pendingIndex = 0;
 let sessionItems = JSON.parse(localStorage.getItem('cs_session') || '[]');
 
+// ── SUPABASE HELPERS ──────────────────────────────────────────
+function getSupabase() {
+  return {
+    url: localStorage.getItem('cs_supabaseUrl') || '',
+    key: localStorage.getItem('cs_supabaseKey') || ''
+  };
+}
+
+async function supabaseFetch(path, options = {}) {
+  const { url, key } = getSupabase();
+  if (!url || !key) throw new Error('Supabase not configured — enter URL and anon key in config.');
+  const res = await fetch(`${url}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Supabase error ${res.status}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+// ── LOAD WATCHLIST FROM SUPABASE ──────────────────────────────
+// Reads the cards table + latest price per source, assembles priceData
+async function loadFromSupabase() {
+  setStatus('loading');
+  document.getElementById('sheetStatus').textContent = 'Loading from Supabase…';
+  try {
+    // Get all active cards
+    const cards = await supabaseFetch('cards?is_active=eq.true&select=id,code,name,character,market,grade,variant,tier,set_name,notes');
+
+    // Get latest prices (latest_prices view aggregates per card+source)
+    const prices = await supabaseFetch('latest_prices?select=card_id,source,currency,price,price_sgd,fetched_at');
+
+    // Build a price map: card_id → { source → price row }
+    const priceMap = {};
+    for (const p of prices) {
+      if (!priceMap[p.card_id]) priceMap[p.card_id] = {};
+      priceMap[p.card_id][p.source] = p;
+    }
+
+    // Assemble priceData rows (matching old sheet format for compatibility)
+    priceData = cards.map(card => {
+      const pm = priceMap[card.id] || {};
+
+      // Pick best JP price: snkrdunk > cardrush > manual
+      const jpRow = pm['snkrdunk'] || pm['cardrush'] || pm['manual'] || null;
+      // Pick best EN price: optcg > ebay > pricecharting
+      const enRow = pm['optcg'] || pm['ebay'] || pm['pricecharting'] || null;
+
+      const jpSgd = jpRow ? parseFloat(jpRow.price_sgd) : null;
+      const enSgd = enRow ? parseFloat(enRow.price_sgd) : null;
+
+      // Derive low/avg/high from available prices
+      const available = [jpSgd, enSgd].filter(Boolean);
+      const avg  = available.length ? Math.round(available.reduce((a,b)=>a+b,0)/available.length) : null;
+      const low  = jpSgd && enSgd ? Math.round(Math.min(jpSgd, enSgd) * 0.95) : avg ? Math.round(avg * 0.9) : null;
+      const high = jpSgd && enSgd ? Math.round(Math.max(jpSgd, enSgd) * 1.05) : avg ? Math.round(avg * 1.1) : null;
+
+      const sources = Object.keys(pm).join(', ') || '';
+      const lastUpdate = jpRow?.fetched_at || enRow?.fetched_at || '';
+      const dateStr = lastUpdate ? new Date(lastUpdate).toLocaleDateString('en-SG') : '';
+
+      return {
+        _id:          card.id,
+        code:         card.code,
+        name:         card.name,
+        character:    card.character,
+        market:       card.market,
+        grade:        card.grade,
+        variant:      card.variant || 'base',
+        tier:         card.tier,
+        set_name:     card.set_name,
+        notes:        card.notes,
+        low_sgd:      low  ? String(low)  : '',
+        avg_sgd:      avg  ? String(avg)  : '',
+        high_sgd:     high ? String(high) : '',
+        jp_sgd:       jpSgd ? String(Math.round(jpSgd)) : '',
+        en_sgd:       enSgd ? String(Math.round(enSgd)) : '',
+        sources_used: sources,
+        updated_at:   dateStr
+      };
+    });
+
+    setStatus('ready');
+    document.getElementById('cardCount').textContent = priceData.length + ' cards';
+    const priced = priceData.filter(r => r.avg_sgd).length;
+    document.getElementById('sheetStatus').textContent =
+      `✓ ${priceData.length} cards · ${priced} with prices · Supabase live`;
+  } catch(e) {
+    setStatus('error');
+    document.getElementById('sheetStatus').textContent = 'Supabase load failed: ' + e.message;
+    console.error(e);
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  const sk = localStorage.getItem('cs_apiKey');
-  const su = localStorage.getItem('cs_sheetUrl');
-  const sw = localStorage.getItem('cs_webAppUrl');
-  if (sk) document.getElementById('apiKey').value    = sk;
-  if (su) { document.getElementById('sheetUrl').value = su; loadSheet(su); }
-  if (sw) document.getElementById('webAppUrl').value  = sw;
+  const sk  = localStorage.getItem('cs_apiKey');
+  const sbu = localStorage.getItem('cs_supabaseUrl');
+  const sbk = localStorage.getItem('cs_supabaseKey');
 
-  ['apiKey','sheetUrl','webAppUrl'].forEach(id => {
-    document.getElementById(id).addEventListener('change', e => {
-      const key = 'cs_' + id;
-      localStorage.setItem(key, e.target.value);
-      if (id === 'sheetUrl') loadSheet(e.target.value);
-    });
+  if (sk)  document.getElementById('apiKey').value      = sk;
+  if (sbu) document.getElementById('supabaseUrl').value = sbu;
+  if (sbk) document.getElementById('supabaseKey').value = sbk;
+
+  // Save on change + reload when Supabase creds change
+  document.getElementById('apiKey').addEventListener('change', e => localStorage.setItem('cs_apiKey', e.target.value));
+  document.getElementById('supabaseUrl').addEventListener('change', e => {
+    localStorage.setItem('cs_supabaseUrl', e.target.value);
+    if (e.target.value && localStorage.getItem('cs_supabaseKey')) loadFromSupabase();
+  });
+  document.getElementById('supabaseKey').addEventListener('change', e => {
+    localStorage.setItem('cs_supabaseKey', e.target.value);
+    if (e.target.value && localStorage.getItem('cs_supabaseUrl')) loadFromSupabase();
   });
 
-  // Auto-collapse config if already set up
-  if (sk && su) {
+  // Auto-collapse config if already configured
+  if (sk && sbu && sbk) {
     document.getElementById('configBody').classList.remove('open');
+    loadFromSupabase();
   } else {
     document.getElementById('configBody').classList.add('open');
   }
 
   setupSpeech();
-
-  // ── DEMO DATA ── inject mock price data and render sample cards
-  injectDemo();
-
   renderSessionList();
 });
-
-function injectDemo() {
-  priceData = [
-    // LUFFY
-    { code:'P-075',    name:'Luffy SEA Champion',   market:'JP', grade:'raw',    variant:'base',    low_sgd:'175', avg_sgd:'192', high_sgd:'215', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'P-075',    name:'Luffy SEA Champion',   market:'JP', grade:'PSA 10', variant:'base',    low_sgd:'480', avg_sgd:'530', high_sgd:'590', sources_used:'Manual',             updated_at:'2026-05-30' },
-    { code:'OP01-120', name:'Luffy SEC',             market:'JP', grade:'raw',    variant:'sec',     low_sgd:'210', avg_sgd:'235', high_sgd:'265', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'OP01-120', name:'Luffy SEC',             market:'JP', grade:'PSA 10', variant:'sec',     low_sgd:'580', avg_sgd:'640', high_sgd:'720', sources_used:'Manual',             updated_at:'2026-05-30' },
-    { code:'OP05-062', name:'Luffy Manga',           market:'JP', grade:'raw',    variant:'manga',   low_sgd:'390', avg_sgd:'440', high_sgd:'495', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'OP05-062', name:'Luffy',                 market:'JP', grade:'raw',    variant:'base',    low_sgd:'28',  avg_sgd:'34',  high_sgd:'42',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    // ZORO
-    { code:'OP05-067', name:'Zoro SP',               market:'JP', grade:'raw',    variant:'SP',      low_sgd:'520', avg_sgd:'555', high_sgd:'590', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'OP05-067', name:'Zoro SP',               market:'JP', grade:'PSA 10', variant:'SP',      low_sgd:'1400',avg_sgd:'1600',high_sgd:'1850',sources_used:'Manual',             updated_at:'2026-05-30' },
-    { code:'ST18-004', name:'Zoro Asia AA',          market:'JP', grade:'raw',    variant:'alt art', low_sgd:'55',  avg_sgd:'68',  high_sgd:'85',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'OP01-041', name:'Zoro SR',               market:'JP', grade:'raw',    variant:'base',    low_sgd:'42',  avg_sgd:'52',  high_sgd:'65',  sources_used:'CardRush',           updated_at:'2026-05-30' },
-    // SHANKS
-    { code:'P-083',    name:'Shanks Promo',          market:'JP', grade:'raw',    variant:'base',    low_sgd:'145', avg_sgd:'165', high_sgd:'190', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'P-083',    name:'Shanks Promo',          market:'JP', grade:'PSA 10', variant:'base',    low_sgd:'420', avg_sgd:'475', high_sgd:'530', sources_used:'Manual',             updated_at:'2026-05-30' },
-    // ACE
-    { code:'OP02-013', name:'Ace',                   market:'JP', grade:'raw',    variant:'base',    low_sgd:'95',  avg_sgd:'115', high_sgd:'140', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'OP02-013', name:'Ace',                   market:'JP', grade:'PSA 10', variant:'base',    low_sgd:'280', avg_sgd:'330', high_sgd:'390', sources_used:'Manual',             updated_at:'2026-05-30' },
-    // SABO
-    { code:'OP02-114', name:'Sabo',                  market:'JP', grade:'raw',    variant:'base',    low_sgd:'55',  avg_sgd:'68',  high_sgd:'82',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    // SANJI
-    { code:'OP05-098', name:'Sanji',                 market:'JP', grade:'raw',    variant:'base',    low_sgd:'38',  avg_sgd:'48',  high_sgd:'60',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    // NAMI
-    { code:'OP03-040', name:'Nami',                  market:'JP', grade:'raw',    variant:'base',    low_sgd:'32',  avg_sgd:'42',  high_sgd:'55',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    // ROBIN
-    { code:'OP04-057', name:'Robin',                 market:'JP', grade:'raw',    variant:'base',    low_sgd:'45',  avg_sgd:'58',  high_sgd:'72',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    // BOA HANCOCK
-    { code:'OP04-107', name:'Boa Hancock',           market:'JP', grade:'raw',    variant:'base',    low_sgd:'38',  avg_sgd:'50',  high_sgd:'65',  sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    // CAVENDISH
-    { code:'EB01-012', name:'Cavendish Event Prize', market:'JP', grade:'raw',    variant:'base',    low_sgd:'120', avg_sgd:'133', high_sgd:'148', sources_used:'CardRush, Snkrdunk', updated_at:'2026-05-30' },
-    { code:'EB01-012', name:'Cavendish Event Prize', market:'JP', grade:'PSA 10', variant:'base',    low_sgd:'320', avg_sgd:'370', high_sgd:'420', sources_used:'Manual',             updated_at:'2026-05-30' },
-  ];
-
-  document.getElementById('cardCount').textContent = priceData.length + ' cards';
-  setStatus('ready');
-  document.getElementById('sheetStatus').innerHTML = '✓ Demo data · <span style="color:var(--muted)">connect your sheet in config for live prices</span>';
-
-  const demos = [
-    { row: priceData[6],  parsed: { market:'JP', game:'OP', code:'OP05-067', variant:'SP',   grade:'raw', vendor_ask:490, name:'Zoro SP'           } },
-    { row: priceData[0],  parsed: { market:'JP', game:'OP', code:'P-075',    variant:'base', grade:'raw', vendor_ask:195, name:'Luffy SEA Champion' } },
-    { row: priceData[10], parsed: { market:'JP', game:'OP', code:'P-083',    variant:'base', grade:'raw', vendor_ask:200, name:'Shanks Promo'       } },
-  ];
-
-  const label = document.createElement('div');
-  label.style.cssText = 'margin:14px 16px 0;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;';
-  label.textContent = '— Preview: 3 sample results';
-  document.getElementById('resultsStack').appendChild(label);
-
-  demos.forEach((d, i) => renderResult(d.row, d.parsed, i, demos.length));
-
-  if (!sessionItems.length) {
-    sessionItems = demos.map((d, i) => ({
-      code: d.row.code, name: d.parsed.name,
-      variant: d.parsed.variant, grade: d.parsed.grade,
-      market: d.parsed.market,
-      low_sgd: d.row.low_sgd, avg_sgd: d.row.avg_sgd, high_sgd: d.row.high_sgd,
-      vendor_ask: d.parsed.vendor_ask,
-      verdict: getVerdict(d.parsed.vendor_ask, d.row.avg_sgd, d.row.low_sgd, d.row.high_sgd).cls,
-      sources: d.row.sources_used,
-      savedAt: new Date(Date.now() - (demos.length - i) * 8 * 60000).toISOString()
-    }));
-  }
-}
 
 // ── TAB SWITCHING ─────────────────────────────────────────────
 function switchTab(name) {
@@ -644,37 +677,6 @@ function toggleConfig() {
   const arrow = document.getElementById('configArrow');
   const open  = body.classList.toggle('open');
   arrow.textContent = open ? '▴' : '▾';
-}
-
-// ── SHEET ─────────────────────────────────────────────────────
-async function loadSheet(url) {
-  if (!url) return;
-  setStatus('loading');
-  document.getElementById('sheetStatus').textContent = 'Loading sheet…';
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    priceData = parseCSV(await resp.text());
-    setStatus('ready');
-    document.getElementById('cardCount').textContent = priceData.length + ' cards';
-    document.getElementById('sheetStatus').innerHTML =
-      `✓ ${priceData.length} cards loaded · <a href="${url}" target="_blank">view sheet</a>`;
-  } catch(e) {
-    setStatus('error');
-    document.getElementById('sheetStatus').textContent = 'Sheet load failed: ' + e.message;
-  }
-}
-
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,'').toLowerCase());
-  return lines.slice(1).map(line => {
-    const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
-    const obj  = {};
-    headers.forEach((h,i) => obj[h] = vals[i]||'');
-    return obj;
-  });
 }
 
 // ── SPEECH ────────────────────────────────────────────────────
@@ -846,11 +848,11 @@ function calcNeg(ask, low, avg, high) {
   if (!ask || !avg) return null;
   const a = parseFloat(ask), l = parseFloat(low)||0,
         av = parseFloat(avg), h = parseFloat(high)||0;
-  const openAt   = Math.round(a * 0.83);          // 17% below ask
-  const target   = Math.round(av);                 // aim for market avg
-  const walkAbove = Math.round(h);                 // walk if they won't go below high
-  const minExit  = Math.round(a * 1.15);          // need 15% margin to flip
-  const spread   = h - l;
+  const openAt    = Math.round(a * 0.83);
+  const target    = Math.round(av);
+  const walkAbove = Math.round(h);
+  const minExit   = Math.round(a * 1.15);
+  const spread    = h - l;
   let note = '';
   if (a <= l)       note = '🔥 Below market low — take it without negotiating.';
   else if (spread < av * 0.1) note = 'Tight spread — market is settled. Less room to push.';
@@ -859,7 +861,7 @@ function calcNeg(ask, low, avg, high) {
   return { openAt, target, walkAbove, minExit, note };
 }
 
-// ── VERDICT HELPERS ───────────────────────────────────────────
+// ── VERDICT ───────────────────────────────────────────────────
 function getVerdict(ask, avg, low, high) {
   if (!ask || !avg) return { cls:'', text:'State a price for verdict' };
   const a = parseFloat(ask), av = parseFloat(avg),
@@ -870,17 +872,7 @@ function getVerdict(ask, avg, low, high) {
   else                      return { cls:'v-over',  text:'🔴 Overpriced — above market high' };
 }
 
-// ── RENDER ────────────────────────────────────────────────────
-function renderClarification(a) {
-  const el = document.createElement('div');
-  el.className = 'clarify-card'; el.id = 'clarify-active';
-  const opts = a.options.map(o =>
-    `<button class="clarify-btn" onclick="applyClarification('${a.field}','${o.toLowerCase()}')">${o}</button>`
-  ).join('');
-  el.innerHTML = `<div class="clarify-q">${a.question}</div><div class="clarify-opts">${opts}</div>`;
-  document.getElementById('resultsStack').appendChild(el);
-}
-
+// ── RENDER RESULT ─────────────────────────────────────────────
 function renderResult(row, parsed, idx, total) {
   const low  = parseFloat(row.low_sgd) ||0;
   const avg  = parseFloat(row.avg_sgd) ||0;
@@ -901,6 +893,20 @@ function renderResult(row, parsed, idx, total) {
     `<div class="rf-chip ${c.cls||''}"><div class="rf-label">${c.label}</div><div class="rf-val">${c.val}</div></div>`
   ).join('');
 
+  // JP vs EN divergence pill (only show if both prices exist)
+  let divHtml = '';
+  if (row.jp_sgd && row.en_sgd) {
+    const jpN = parseFloat(row.jp_sgd), enN = parseFloat(row.en_sgd);
+    const diff = jpN - enN;
+    const pct  = Math.round((diff / enN) * 100);
+    const col  = diff > 0 ? 'var(--warn)' : 'var(--good)';
+    const sign = diff > 0 ? '+' : '';
+    divHtml = `<div style="margin:6px 14px 0;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">JP vs EN divergence</span>
+      <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${col}">${sign}S$${Math.round(diff)} (${sign}${pct}%)</span>
+    </div>`;
+  }
+
   const negHtml = neg ? `
     <div class="neg-strip">
       <div class="neg-title">Negotiation</div>
@@ -915,7 +921,7 @@ function renderResult(row, parsed, idx, total) {
 
   const cardName = row.name||parsed.name||row.code;
   const savedData = {
-    code: row.code||parsed.code, name: cardName,
+    _id: row._id, code: row.code||parsed.code, name: cardName,
     variant: v, grade: row.grade||parsed.grade,
     market: row.market||parsed.market,
     low_sgd: low, avg_sgd: avg, high_sgd: high,
@@ -923,21 +929,14 @@ function renderResult(row, parsed, idx, total) {
     sources: row.sources_used||''
   };
 
-  // Market position bar calculation
-  // Position the dot: clamp ask within [low*0.7, high*1.3] so extreme values still show
+  // Market position bar
   let barHtml = '';
   if (low && avg && high) {
-    const barMin  = low  * 0.85;
-    const barMax  = high * 1.15;
-    const barSpan = barMax - barMin;
-    // Dot position for ask (or avg if no ask)
+    const barMin  = low  * 0.85, barMax = high * 1.15, barSpan = barMax - barMin;
     const dotVal  = ask ? Math.min(Math.max(parseFloat(ask), barMin), barMax) : null;
     const dotPct  = dotVal !== null ? ((dotVal - barMin) / barSpan * 100).toFixed(1) : null;
-    // Range bar: from low to high as % of total track
     const rangePctL = ((low  - barMin) / barSpan * 100).toFixed(1);
     const rangePctR = ((high - barMin) / barSpan * 100).toFixed(1);
-
-    // Zone label
     let zoneLabel = '', zoneCls = 'pos-none';
     if (ask) {
       const a = parseFloat(ask), l = low||avg*0.9, h = high||avg*1.1;
@@ -945,32 +944,25 @@ function renderResult(row, parsed, idx, total) {
       else if (a <= avg * 1.05){ zoneLabel = 'Fair price';   zoneCls = 'pos-fair';  }
       else if (a <= h)         { zoneLabel = 'Pricey';       zoneCls = 'pos-high';  }
       else                     { zoneLabel = 'Overpriced';   zoneCls = 'pos-over';  }
-    } else {
-      zoneLabel = 'No ask'; zoneCls = 'pos-none';
-    }
-
-    const dotEl = dotPct !== null
-      ? `<div class="market-bar-dot ${zoneCls}" style="left:${dotPct}%"></div>`
-      : '';
-
-    barHtml = `
-      <div class="market-bar-wrap">
-        <div class="market-bar-labels">
-          <div class="mbl lb"><div>Low</div><span>S$${low}</span></div>
-          <div class="mbl mb"><div>Avg</div><span>S$${avg}</span></div>
-          <div class="mbl hb"><div>High</div><span>S$${high}</span></div>
-        </div>
-        <div class="market-bar-track">
-          <div class="market-bar-range" style="left:${rangePctL}%;right:${(100-rangePctR).toFixed(1)}%"></div>
-          ${dotEl}
-        </div>
-        <div class="market-bar-ask">
-          <div class="mba-line"></div>
-          <div class="mba-label">${ask?`Asking <strong>S$${ask}</strong>`:'No ask'}</div>
-          <div class="mba-zone ${zoneCls}">${zoneLabel}</div>
-          <div class="mba-line"></div>
-        </div>
-      </div>`;
+    } else { zoneLabel = 'No ask'; zoneCls = 'pos-none'; }
+    const dotEl = dotPct !== null ? `<div class="market-bar-dot ${zoneCls}" style="left:${dotPct}%"></div>` : '';
+    barHtml = `<div class="market-bar-wrap">
+      <div class="market-bar-labels">
+        <div class="mbl lb"><div>Low</div><span>S$${low}</span></div>
+        <div class="mbl mb"><div>Avg</div><span>S$${avg}</span></div>
+        <div class="mbl hb"><div>High</div><span>S$${high}</span></div>
+      </div>
+      <div class="market-bar-track">
+        <div class="market-bar-range" style="left:${rangePctL}%;right:${(100-rangePctR).toFixed(1)}%"></div>
+        ${dotEl}
+      </div>
+      <div class="market-bar-ask">
+        <div class="mba-line"></div>
+        <div class="mba-label">${ask?`Asking <strong>S$${ask}</strong>`:'No ask'}</div>
+        <div class="mba-zone ${zoneCls}">${zoneLabel}</div>
+        <div class="mba-line"></div>
+      </div>
+    </div>`;
   }
 
   const card = document.createElement('div');
@@ -981,6 +973,7 @@ function renderResult(row, parsed, idx, total) {
       <div class="result-fields">${chipsHtml}</div>
       <div class="result-name">${cardName}</div>
     </div>
+    ${divHtml}
     ${barHtml}
     <div class="price-grid">
       <div class="price-cell"><div class="price-label">Low</div><div class="price-val p-low">${low?'S$'+low:'—'}</div></div>
@@ -990,14 +983,22 @@ function renderResult(row, parsed, idx, total) {
     ${negHtml}
     <div class="save-row">
       <button class="save-btn" id="save-${idx}">＋ Save to session</button>
-      <span class="sources-label">${row.sources_used||'—'}${row.updated_at?' · '+row.updated_at:''}</span>
+      <span class="sources-label">${row.sources_used||'no prices yet'}${row.updated_at?' · '+row.updated_at:''}</span>
     </div>
   `;
-
   card._savedData = savedData;
   card.querySelector('.save-btn').onclick = function() { saveCard(savedData, this); };
-
   document.getElementById('resultsStack').appendChild(card);
+}
+
+function renderClarification(a) {
+  const el = document.createElement('div');
+  el.className = 'clarify-card'; el.id = 'clarify-active';
+  const opts = a.options.map(o =>
+    `<button class="clarify-btn" onclick="applyClarification('${a.field}','${o.toLowerCase()}')">${o}</button>`
+  ).join('');
+  el.innerHTML = `<div class="clarify-q">${a.question}</div><div class="clarify-opts">${opts}</div>`;
+  document.getElementById('resultsStack').appendChild(el);
 }
 
 function renderNotFound(parsed, idx, total) {
@@ -1007,12 +1008,12 @@ function renderNotFound(parsed, idx, total) {
   el.innerHTML = `
     ${total>1?`<div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)">Card ${idx+1} of ${total}</div>`:''}
     <div class="nf-code">${parsed.code||'Unknown'}${v} · ${parsed.grade||'raw'} · ${parsed.market||'JP'}</div>
-    <p>Not in your watchlist.<br>Add to sheet and refresh.</p>
+    <p>Not in your watchlist.<br>Add it in Supabase to track prices.</p>
   `;
   document.getElementById('resultsStack').appendChild(el);
 }
 
-// ── SESSION ───────────────────────────────────────────────────
+// ── SESSION SAVE — writes to Supabase price_history ───────────
 function saveCard(data, btn) {
   const item = { ...data, savedAt: new Date().toISOString() };
   sessionItems.push(item);
@@ -1020,38 +1021,42 @@ function saveCard(data, btn) {
   btn.textContent = '✓ Saved';
   btn.classList.add('saved');
   btn.disabled = true;
-
-  // Update session tab count
   document.getElementById('sessionCount').textContent = sessionItems.length + ' card' + (sessionItems.length===1?'':'s') + ' saved';
 
-  // Write to Google Sheet in background
-  const webAppUrl = document.getElementById('webAppUrl').value.trim();
-  if (webAppUrl) {
-    document.getElementById('syncStatus').textContent = 'Syncing…';
-    fetch(webAppUrl, {
+  // Write vendor_ask as a manual price observation to Supabase
+  if (data._id && data.vendor_ask) {
+    const syncEl = document.getElementById('syncStatus');
+    syncEl.textContent = 'Syncing to Supabase…';
+    supabaseFetch('price_history', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item)
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        card_id:   data._id,
+        source:    'manual',
+        currency:  'SGD',
+        price:     parseFloat(data.vendor_ask),
+        price_sgd: parseFloat(data.vendor_ask),
+        fx_rate:   1.0
+      })
     })
-    .then(r => r.json())
-    .then(r => {
-      document.getElementById('syncStatus').textContent = r.status==='ok' ? '✓ Synced to sheet' : '⚠ Sheet sync failed';
-      setTimeout(() => { document.getElementById('syncStatus').textContent = ''; }, 3000);
+    .then(() => {
+      syncEl.textContent = '✓ Synced to Supabase';
+      setTimeout(() => { syncEl.textContent = ''; }, 3000);
     })
-    .catch(() => {
-      document.getElementById('syncStatus').textContent = '⚠ Sheet sync failed (offline?)';
-      setTimeout(() => { document.getElementById('syncStatus').textContent = ''; }, 3000);
+    .catch(e => {
+      syncEl.textContent = '⚠ Sync failed: ' + e.message;
+      setTimeout(() => { syncEl.textContent = ''; }, 4000);
     });
   }
 }
 
-// ── STATIC NEGOTIATION LOGIC ─────────────────────────────────
+// ── SESSION RENDER ────────────────────────────────────────────
 function buildNegPanel(item) {
   const ask  = parseFloat(item.vendor_ask) || 0;
   const low  = parseFloat(item.low_sgd)   || 0;
   const avg  = parseFloat(item.avg_sgd)   || 0;
   const high = parseFloat(item.high_sgd)  || 0;
-  if (!ask || !avg) return '<div style="font-size:12px;color:var(--muted);padding:4px 0;">No vendor ask recorded — resave with a price for negotiation guidance.</div>';
+  if (!ask || !avg) return '<div style="font-size:12px;color:var(--muted);padding:4px 0;">No vendor ask recorded.</div>';
 
   const openAt  = Math.round(ask * 0.83);
   const target  = Math.round(avg);
@@ -1059,91 +1064,65 @@ function buildNegPanel(item) {
   const verdict = getVerdict(ask, avg, low, high);
 
   let icon, title, desc, script, numColor;
-
   if (verdict.cls === 'v-great') {
-    icon = '🟢'; numColor = 'c-green';
-    title = "Take it — don't negotiate";
-    desc  = "Ask is below the market low. This is already mispriced in your favour. Every second you spend haggling risks someone else walking up. Commit immediately.";
-    script = `<strong>"I'll take it."</strong> That's it. No offer, no hesitation.`;
+    icon = '🟢'; numColor = 'c-green'; title = "Take it — don't negotiate";
+    desc  = "Ask is below the market low. Already mispriced in your favour. Commit immediately.";
+    script = `<strong>"I'll take it."</strong>`;
   } else if (verdict.cls === 'v-fair') {
-    icon = '🟡'; numColor = 'c-yellow';
-    title = "Light push — 5-8% off ask";
-    desc  = `Price is fair so you have a weak negotiating hand. One attempt only. Frame it as commitment to buy now, not a haggle. If they don't move, take it — don't walk over 5%.`;
-    script = `<strong>"I'll take it right now for S$${Math.round(ask * 0.93)}."</strong> If they say no, pay ask and move on.`;
+    icon = '🟡'; numColor = 'c-yellow'; title = "Light push — 5-8% off ask";
+    desc  = `Fair price. One attempt only. Frame it as commitment to buy now.`;
+    script = `<strong>"I'll take it right now for S$${Math.round(ask * 0.93)}."</strong>`;
   } else if (verdict.cls === 'v-high') {
-    icon = '🟠'; numColor = 'c-orange';
-    title = "Negotiate — target market avg";
-    desc  = `Vendor is above average but within range. Open 15-17% below ask, aim to settle at market avg. Use the immediate-buy commitment as leverage. Walk if they won't come below the market high.`;
-    script = `<strong>"I'll do S$${openAt} right now."</strong> If they counter above S$${high}, say: <strong>"That's still above what I'm seeing today — I'll pass."</strong> Then actually walk.`;
+    icon = '🟠'; numColor = 'c-orange'; title = "Negotiate — target market avg";
+    desc  = `Above average. Open 15-17% below ask, aim to settle at market avg.`;
+    script = `<strong>"I'll do S$${openAt} right now."</strong> Walk if above S$${high}.`;
   } else {
-    icon = '🔴'; numColor = 'c-red';
-    title = "Offer avg — be ready to walk";
-    desc  = `Above the market high. Vendor is either uninformed or fishing. Your offer at avg is fair. If they won't move below the high, leave — there's a better-priced copy on the floor or your margin disappears.`;
-    script = `<strong>"Market on this is around S$${avg} — I can do that."</strong> If they counter above S$${high}: <strong>"No worries, I'll pass."</strong> Walk and mean it.`;
+    icon = '🔴'; numColor = 'c-red'; title = "Offer avg — be ready to walk";
+    desc  = `Above the market high. Your offer at avg is fair. Walk if they won't move below the high.`;
+    script = `<strong>"Market on this is around S$${avg} — I can do that."</strong>`;
   }
 
-  return `
-    <div class="neg-panel">
-      <div class="neg-action">
-        <div class="neg-action-icon">${icon}</div>
-        <div class="neg-action-body">
-          <div class="neg-action-title">${title}</div>
-          <div class="neg-action-desc">${desc}</div>
-        </div>
+  return `<div class="neg-panel">
+    <div class="neg-action">
+      <div class="neg-action-icon">${icon}</div>
+      <div class="neg-action-body">
+        <div class="neg-action-title">${title}</div>
+        <div class="neg-action-desc">${desc}</div>
       </div>
-      <div class="neg-numbers">
-        <div class="neg-num">
-          <div class="neg-num-label">Open at</div>
-          <div class="neg-num-val ${numColor}">S$${openAt}</div>
-        </div>
-        <div class="neg-num">
-          <div class="neg-num-label">Target</div>
-          <div class="neg-num-val c-muted">S$${target}</div>
-        </div>
-        <div class="neg-num">
-          <div class="neg-num-label">Walk above</div>
-          <div class="neg-num-val c-red">S$${high}</div>
-        </div>
-        <div class="neg-num">
-          <div class="neg-num-label">Need exit at</div>
-          <div class="neg-num-val c-orange">S$${minExit}</div>
-        </div>
-      </div>
-      <div class="neg-script">${script}</div>
-      <button class="claude-btn" onclick="getClaudeAdvice(this, ${JSON.stringify(item).replace(/"/g,'&quot;')})">
-        ✦ Ask Claude for deeper reasoning
-      </button>
-      <div class="claude-response"></div>
-    </div>`;
+    </div>
+    <div class="neg-numbers">
+      <div class="neg-num"><div class="neg-num-label">Open at</div><div class="neg-num-val ${numColor}">S$${openAt}</div></div>
+      <div class="neg-num"><div class="neg-num-label">Target</div><div class="neg-num-val c-muted">S$${target}</div></div>
+      <div class="neg-num"><div class="neg-num-label">Walk above</div><div class="neg-num-val c-red">S$${high}</div></div>
+      <div class="neg-num"><div class="neg-num-label">Need exit at</div><div class="neg-num-val c-orange">S$${minExit}</div></div>
+    </div>
+    <div class="neg-script">${script}</div>
+    <button class="claude-btn" onclick="getClaudeAdvice(this, ${JSON.stringify(item).replace(/"/g,'&quot;')})">
+      ✦ Ask Claude for deeper reasoning
+    </button>
+    <div class="claude-response"></div>
+  </div>`;
 }
 
-// ── CLAUDE DEEPER REASONING ───────────────────────────────────
 async function getClaudeAdvice(btn, item) {
   const apiKey = document.getElementById('apiKey').value.trim();
   if (!apiKey) { alert('Enter your Claude API key in config first.'); return; }
-  btn.classList.add('loading');
-  btn.textContent = '✦ Thinking…';
+  btn.classList.add('loading'); btn.textContent = '✦ Thinking…';
   const responseEl = btn.nextElementSibling;
-  const ask  = item.vendor_ask, low = item.low_sgd, avg = item.avg_sgd, high = item.high_sgd;
   const prompt = `You are a TCG card trading advisor for a Singapore-based trader at a card show.
-
 Card: ${item.name} (${item.code} · ${item.variant} · ${item.grade} · ${item.market} market)
-Market: Low S$${low} · Avg S$${avg} · High S$${high}
-Vendor asking: S$${ask}
-
-Give sharp, specific negotiation advice in 3-4 sentences max. Cover: whether to buy, what to offer, when to walk, and what exit price they need for a 15% flip margin. Be direct, no fluff. Use S$ figures throughout.`;
-
+Market: Low S$${item.low_sgd} · Avg S$${item.avg_sgd} · High S$${item.high_sgd}
+Vendor asking: S$${item.vendor_ask}
+Give sharp, specific negotiation advice in 3-4 sentences max. Cover: whether to buy, what to offer, when to walk, and what exit price they need for a 15% flip margin. Be direct, no fluff. Use S$ figures.`;
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,
         'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:180,
-        messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:180,messages:[{role:'user',content:prompt}]})
     });
     const data = await resp.json();
-    const text = data.content?.[0]?.text || 'No response.';
-    responseEl.textContent = text;
+    responseEl.textContent = data.content?.[0]?.text || 'No response.';
     responseEl.classList.add('show');
     btn.textContent = '✦ Ask Claude for deeper reasoning';
     btn.classList.remove('loading');
@@ -1165,45 +1144,40 @@ function renderSessionList() {
   const list  = document.getElementById('sessionList');
   const count = document.getElementById('sessionCount');
   count.textContent = sessionItems.length + ' card' + (sessionItems.length===1?'':'s') + ' saved';
-
   if (!sessionItems.length) {
-    list.innerHTML = `
-      <div class="session-empty">
-        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
-        Nothing saved yet.<br>Scan a card and tap Save.
-      </div>`;
+    list.innerHTML = `<div class="session-empty">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+      Nothing saved yet.<br>Scan a card and tap Save.</div>`;
     return;
   }
-
   list.innerHTML = '<div class="session-list">' +
-    [...sessionItems].reverse().map((item, i) => {
-      const vd    = getVerdict(item.vendor_ask, item.avg_sgd, item.low_sgd, item.high_sgd);
+    [...sessionItems].reverse().map((item) => {
+      const vd     = getVerdict(item.vendor_ask, item.avg_sgd, item.low_sgd, item.high_sgd);
       const vLabel = vd.cls==='v-great'?'Under market':vd.cls==='v-fair'?'Fair price':vd.cls==='v-high'?'Pricey':vd.cls==='v-over'?'Overpriced':'No ask';
-      const v     = item.variant&&item.variant!=='base'?` · ${item.variant}`:'';
-      return `
-        <div class="session-item" onclick="toggleSessionExpand(this)">
-          <div class="si-top">
-            <div class="si-name">${item.name||item.code}</div>
-            <div class="si-ask">${item.vendor_ask?'S$'+item.vendor_ask:'—'}</div>
-          </div>
-          <div class="si-meta">
-            <span class="si-code">${item.code}${v} · ${item.grade} · ${item.market}</span>
-            <span class="si-verdict ${vd.cls}">${vLabel}</span>
-          </div>
-          <div class="si-prices">
-            <div class="si-price-item">Low <span>${item.low_sgd?'S$'+item.low_sgd:'—'}</span></div>
-            <div class="si-price-item">Avg <span>${item.avg_sgd?'S$'+item.avg_sgd:'—'}</span></div>
-            <div class="si-price-item">High <span>${item.high_sgd?'S$'+item.high_sgd:'—'}</span></div>
-          </div>
-          <div class="si-tap-hint" style="font-size:10px;color:var(--muted);margin-top:6px;text-align:right;">Tap for negotiation ›</div>
-          <div class="si-expand">${buildNegPanel(item)}</div>
-        </div>`;
+      const v      = item.variant&&item.variant!=='base'?` · ${item.variant}`:'';
+      return `<div class="session-item" onclick="toggleSessionExpand(this)">
+        <div class="si-top">
+          <div class="si-name">${item.name||item.code}</div>
+          <div class="si-ask">${item.vendor_ask?'S$'+item.vendor_ask:'—'}</div>
+        </div>
+        <div class="si-meta">
+          <span class="si-code">${item.code}${v} · ${item.grade} · ${item.market}</span>
+          <span class="si-verdict ${vd.cls}">${vLabel}</span>
+        </div>
+        <div class="si-prices">
+          <div class="si-price-item">Low <span>${item.low_sgd?'S$'+item.low_sgd:'—'}</span></div>
+          <div class="si-price-item">Avg <span>${item.avg_sgd?'S$'+item.avg_sgd:'—'}</span></div>
+          <div class="si-price-item">High <span>${item.high_sgd?'S$'+item.high_sgd:'—'}</span></div>
+        </div>
+        <div class="si-tap-hint" style="font-size:10px;color:var(--muted);margin-top:6px;text-align:right;">Tap for negotiation ›</div>
+        <div class="si-expand">${buildNegPanel(item)}</div>
+      </div>`;
     }).join('') + '</div>';
 }
 
 function clearSession() {
   if (!sessionItems.length) return;
-  if (!confirm('Clear today\'s session? This cannot be undone.')) return;
+  if (!confirm('Clear today\'s session?')) return;
   sessionItems = [];
   localStorage.setItem('cs_session', '[]');
   renderSessionList();
@@ -1211,11 +1185,11 @@ function clearSession() {
 
 // ── CHECKLIST ─────────────────────────────────────────────────
 function updateChecklist(p) {
-  if (p.market) updateChip('market', p.market==='JP'?'JP':'EN');
-  if (p.game)   updateChip('game',   p.game==='OP'?'One Piece':p.game==='PK'?'Pokémon':p.game);
-  if (p.code)   updateChip('code',   p.code);
-  if (p.variant)updateChip('variant',p.variant==='base'?'Base':p.variant);
-  if (p.grade)  updateChip('grade',  p.grade);
+  if (p.market)     updateChip('market',  p.market==='JP'?'JP':'EN');
+  if (p.game)       updateChip('game',    p.game==='OP'?'One Piece':p.game==='PK'?'Pokémon':p.game);
+  if (p.code)       updateChip('code',    p.code);
+  if (p.variant)    updateChip('variant', p.variant==='base'?'Base':p.variant);
+  if (p.grade)      updateChip('grade',   p.grade);
   if (p.vendor_ask!=null) updateChip('ask','S$'+p.vendor_ask);
 }
 
@@ -1227,9 +1201,9 @@ function updateChip(id, val, state) {
   if (val) valEl.textContent=val;
 }
 
-// ── PHOTO SCAN ───────────────────────────────────────────────
-let currentMode    = 'voice';
-let selectedPhoto  = null;  // base64 string
+// ── PHOTO SCAN ────────────────────────────────────────────────
+let currentMode   = 'voice';
+let selectedPhoto = null;
 
 function setMode(mode) {
   currentMode = mode;
@@ -1241,35 +1215,22 @@ function setMode(mode) {
   clearResults(); hideError();
 }
 
-function handlePhotoSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  loadPhotoFile(file);
-}
-
+function handlePhotoSelect(e) { const f=e.target.files[0]; if(f) loadPhotoFile(f); }
 function handlePhotoDrop(e) {
-  e.preventDefault();
-  document.getElementById('photoDrop').classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (!file || !file.type.startsWith('image/')) return;
-  loadPhotoFile(file);
+  e.preventDefault(); document.getElementById('photoDrop').classList.remove('drag');
+  const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) loadPhotoFile(f);
 }
-
 function loadPhotoFile(file) {
   const reader = new FileReader();
   reader.onload = ev => {
     const dataUrl = ev.target.result;
-    // Show preview
     const preview = document.getElementById('photoPreview');
-    preview.src = dataUrl;
-    preview.classList.add('show');
-    // Strip the data:image/...;base64, prefix — just keep base64 data
+    preview.src = dataUrl; preview.classList.add('show');
     selectedPhoto = { base64: dataUrl.split(',')[1], mediaType: file.type };
     document.getElementById('scanPhotoBtn').disabled = false;
   };
   reader.readAsDataURL(file);
 }
-
 function clearPhoto() {
   selectedPhoto = null;
   const preview = document.getElementById('photoPreview');
@@ -1283,129 +1244,64 @@ async function doPhotoScan() {
   const apiKey = document.getElementById('apiKey').value.trim();
   if (!apiKey)        { showError('Enter your Claude API key in config.'); return; }
   if (!selectedPhoto) { showError('Select a photo first.'); return; }
-  if (!priceData.length) { showError('Sheet not loaded — check your CSV URL in config.'); return; }
+  if (!priceData.length) { showError('No cards loaded — check your Supabase config.'); return; }
 
   clearResults(); showLoading(true, 'Scanning photo…');
 
-  // Build the watchlist context for Claude
   const watchlistSummary = priceData.map(r =>
     `${r.code} · ${r.name} · ${r.variant||'base'} · ${r.grade} · ${r.market}`
   ).join('\n');
 
   const prompt = `You are scanning a photo from a trading card show for a collector.
-
-The collector's watchlist contains these cards:
+The collector's watchlist:
 ${watchlistSummary}
 
-Look at the photo carefully. Identify:
-1. Any card names, set codes, or card art visible
-2. Any price tags, stickers, or written prices visible
-
-Return ONLY valid JSON — an array of matches found. For each match:
-- code: the card code if visible, or your best match to the watchlist (e.g. "OP05-067")
-- name: card name as you read it
-- variant: variant if visible (SP, manga, alt art, base)
-- grade: grade if visible (raw, PSA 10), default "raw"
-- market: "JP" or "EN" if determinable, default "JP"
-- price_visible: the price you can read from the photo as a number, null if not visible
-- confidence: "high"|"medium"|"low" — how confident you are in the match
-
-Only include cards that match or closely match something on the watchlist.
-If nothing matches, return [].
-
+Look at the photo. Identify any cards and prices visible.
+Return ONLY valid JSON array. For each watchlist match:
+- code, name, variant, grade, market, price_visible (number or null), confidence ("high"|"medium"|"low")
+Only include watchlist matches. Return [] if nothing matches.
 Example: [{"code":"OP05-067","name":"Zoro SP","variant":"SP","grade":"raw","market":"JP","price_visible":480,"confidence":"high"}]`;
 
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 800,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: selectedPhoto.mediaType,
-                data: selectedPhoto.base64
-              }
-            },
-            { type: 'text', text: prompt }
-          ]
-        }]
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,
+        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({ model:'claude-opus-4-6', max_tokens:800,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:selectedPhoto.mediaType,data:selectedPhoto.base64}},
+          {type:'text',text:prompt}
+        ]}]
       })
     });
-
-    if (!resp.ok) {
-      const e = await resp.json().catch(()=>({}));
-      throw new Error('Claude error: ' + (e?.error?.message || resp.status));
-    }
-
-    const data   = await resp.json();
-    const rawText = (data.content?.[0]?.text || '').trim();
-
-    // Extract JSON array from response — Claude sometimes adds explanation text
+    if (!resp.ok) { const e=await resp.json().catch(()=>({})); throw new Error('Claude error: '+(e?.error?.message||resp.status)); }
+    const data = await resp.json();
+    const rawText = (data.content?.[0]?.text||'').trim();
     let parsed = [];
     const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      try { parsed = JSON.parse(jsonMatch[0]); } catch(e) { parsed = []; }
-    }
-
+    if (jsonMatch) { try { parsed = JSON.parse(jsonMatch[0]); } catch(e) { parsed = []; } }
     showLoading(false);
-
     if (!parsed.length) {
-      document.getElementById('resultsStack').innerHTML = `
-        <div class="scan-summary">
-          <div class="scan-summary-title">No watchlist cards found</div>
-          <div class="scan-summary-sub">None of the cards visible matched your watchlist. Try getting closer, reducing glare, or making sure price tags are visible.</div>
-        </div>`;
-      return;
+      document.getElementById('resultsStack').innerHTML = `<div class="scan-summary">
+        <div class="scan-summary-title">No watchlist cards found</div>
+        <div class="scan-summary-sub">Try getting closer or making sure price tags are visible.</div>
+      </div>`; return;
     }
-
-    // Show summary header
-    const found = parsed.length;
-    const priced = parsed.filter(p => p.price_visible).length;
-    const summaryEl = document.createElement('div');
-    summaryEl.className = 'scan-summary';
-    summaryEl.innerHTML = `
-      <div class="scan-summary-title">${found} watchlist card${found>1?'s':''} found in photo</div>
+    const found=parsed.length, priced=parsed.filter(p=>p.price_visible).length;
+    const summaryEl=document.createElement('div'); summaryEl.className='scan-summary';
+    summaryEl.innerHTML=`<div class="scan-summary-title">${found} watchlist card${found>1?'s':''} found</div>
       <div class="scan-summary-sub">${priced} with readable price tags · tap any card to save</div>`;
     document.getElementById('resultsStack').appendChild(summaryEl);
-
-    // Render each match as a full result card
-    parsed.forEach((match, idx) => {
-      const row = findInSheet(match.code, match.market, match.grade, match.variant);
-      const parsedCard = {
-        market:     match.market     || 'JP',
-        game:       match.code?.startsWith('S') ? 'PK' : 'OP',
-        code:       match.code,
-        variant:    match.variant    || 'base',
-        grade:      match.grade      || 'raw',
-        vendor_ask: match.price_visible || null,
-        name:       match.name
-      };
-
-      // Add confidence badge to name
-      if (match.confidence === 'low') {
-        parsedCard.name = (match.name||match.code) + ' ⚠ low confidence';
-      }
-
-      if (!row) renderNotFound(parsedCard, idx, parsed.length);
-      else      renderResult(row, parsedCard, idx, parsed.length);
+    parsed.forEach((match,idx) => {
+      const row=findInSheet(match.code,match.market,match.grade,match.variant);
+      const parsedCard={market:match.market||'JP',game:'OP',code:match.code,
+        variant:match.variant||'base',grade:match.grade||'raw',
+        vendor_ask:match.price_visible||null,
+        name:match.confidence==='low'?(match.name||match.code)+' ⚠ low confidence':match.name};
+      if(!row) renderNotFound(parsedCard,idx,parsed.length);
+      else     renderResult(row,parsedCard,idx,parsed.length);
     });
-
-  } catch(e) {
-    showLoading(false);
-    showError('Scan failed: ' + e.message);
-  }
+  } catch(e) { showLoading(false); showError('Scan failed: '+e.message); }
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
