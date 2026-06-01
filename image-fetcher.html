@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Image Fetcher</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap');
+:root {
+  --bg: #0d0d14; --surface: #16161f; --border: #2a2a3a;
+  --accent: #6c63ff; --good: #00d4aa; --danger: #ff5c6a; --warn: #ffb340;
+  --text: #e8e8f0; --muted: #6b6b85;
+  --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);
+  min-height:100vh;max-width:600px;margin:0 auto;padding:24px 16px 40px;}
+h1{font-family:var(--mono);font-size:15px;color:var(--accent);letter-spacing:.1em;margin-bottom:4px;}
+.subtitle{font-size:12px;color:var(--muted);margin-bottom:24px;}
+.field{margin-bottom:14px;}
+label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:5px;}
+input{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;
+  padding:9px 12px;outline:none;transition:border-color .2s;}
+input:focus{border-color:var(--accent);}
+.btn{width:100%;padding:13px;border-radius:10px;border:none;cursor:pointer;
+  font-family:var(--sans);font-weight:600;font-size:15px;
+  background:var(--accent);color:#fff;transition:all .15s;margin-top:8px;}
+.btn:hover{background:#8079ff;}
+.btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
+.btn-ghost{background:var(--surface);color:var(--muted);border:1px solid var(--border);margin-top:8px;}
+.log{margin-top:20px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:14px;max-height:400px;overflow-y:auto;}
+.log-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.log-line{font-family:var(--mono);font-size:11px;line-height:1.8;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.log-line.ok{color:var(--good);}
+.log-line.skip{color:var(--muted);}
+.log-line.err{color:var(--danger);}
+.log-line.info{color:var(--warn);}
+.progress-bar{margin-top:14px;background:var(--border);border-radius:4px;height:6px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .3s;width:0%;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.stat-val{font-family:var(--mono);font-size:18px;font-weight:700;}
+.stat-label{font-size:10px;color:var(--muted);margin-top:2px;}
+.s-ok{color:var(--good);} .s-skip{color:var(--muted);} .s-err{color:var(--danger);} .s-total{color:var(--accent);}
+.preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;}
+.preview-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.preview-item img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;}
+.preview-item .preview-label{font-size:9px;color:var(--muted);padding:4px 6px;font-family:var(--mono);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+</style>
+</head>
+<body>
+<h1>// Card Image Fetcher</h1>
+<p class="subtitle">Fetches card images from OPTCG API and stores them in your Supabase bucket</p>
+
+<div class="field">
+  <label>Supabase URL</label>
+  <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
+</div>
+<div class="field">
+  <label>Supabase Service Role Key (secret key — needed for storage writes)</label>
+  <input type="password" id="sbKey" placeholder="eyJ...">
+</div>
+
+<button class="btn" id="runBtn" onclick="runFetch()">Fetch & Store All Card Images</button>
+<button class="btn btn-ghost" id="checkBtn" onclick="checkExisting()">Check existing images</button>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val s-total" id="st-total">—</div><div class="stat-label">Total</div></div>
+  <div class="stat"><div class="stat-val s-ok"    id="st-ok">—</div><div class="stat-label">Stored</div></div>
+  <div class="stat"><div class="stat-val s-skip"  id="st-skip">—</div><div class="stat-label">Skipped</div></div>
+  <div class="stat"><div class="stat-val s-err"   id="st-err">—</div><div class="stat-label">Failed</div></div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="log" id="log" style="display:none;">
+  <div class="log-title">Log</div>
+  <div id="logLines"></div>
+</div>
+
+<div class="preview-grid" id="previewGrid"></div>
+
+<script>
+const OPTCG_BASE = 'https://optcgapi.com/api';
+
+let stats = { total:0, ok:0, skip:0, err:0 };
+
+function sb() {
+  return {
+    url: document.getElementById('sbUrl').value.trim().replace(/\/$/, ''),
+    key: document.getElementById('sbKey').value.trim()
+  };
+}
+
+function log(msg, type='info') {
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  line.className = 'log-line ' + type;
+  line.textContent = msg;
+  document.getElementById('logLines').appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateStats() {
+  document.getElementById('st-total').textContent = stats.total;
+  document.getElementById('st-ok').textContent    = stats.ok;
+  document.getElementById('st-skip').textContent  = stats.skip;
+  document.getElementById('st-err').textContent   = stats.err;
+  const pct = stats.total ? Math.round(((stats.ok + stats.skip + stats.err) / stats.total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function addPreview(code, url) {
+  const grid = document.getElementById('previewGrid');
+  if (grid.children.length >= 12) return; // show first 12 only
+  const item = document.createElement('div');
+  item.className = 'preview-item';
+  item.innerHTML = `<img src="${url}" loading="lazy" onerror="this.style.display='none'">
+    <div class="preview-label">${code}</div>`;
+  grid.appendChild(item);
+}
+
+// ── FETCH ALL CARDS FROM SUPABASE ──────────────────────────────
+async function getCards() {
+  const { url, key } = sb();
+  const res = await fetch(`${url}/rest/v1/cards?is_active=eq.true&select=id,code,variant,grade,image_url`, {
+    headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+  });
+  if (!res.ok) throw new Error('Could not fetch cards: ' + await res.text());
+  return res.json();
+}
+
+// ── GET IMAGE URL — tries multiple sources ─────────────────────
+async function getOptcgImageUrl(code, variant) {
+  // 1. Try OPTCG API (covers most EN set cards)
+  const optcgUrl = await tryOptcgApi(code, variant);
+  if (optcgUrl) return optcgUrl;
+
+  // 2. Try Bandai official image URL directly (EN site)
+  const bandaiUrl = await tryBandaiDirect(code);
+  if (bandaiUrl) return bandaiUrl;
+
+  // 3. Try EB/PRB sets via OPTCG decks endpoint as fallback
+  if (/^EB|^PRB/.test(code)) {
+    const deckUrl = await tryOptcgDecks(code, variant);
+    if (deckUrl) return deckUrl;
+  }
+
+  return null;
+}
+
+async function tryOptcgApi(code, variant) {
+  try {
+    const isPromo = /^P-/.test(code);
+    const isST    = /^ST\d{2}/.test(code);
+    const isEB    = /^EB/.test(code);
+    const isPRB   = /^PRB/.test(code);
+    let endpoint;
+    if (isPromo)         endpoint = `${OPTCG_BASE}/promos/card/${encodeURIComponent(code)}/`;
+    else if (isST)       endpoint = `${OPTCG_BASE}/decks/card/${encodeURIComponent(code)}/`;
+    else if (isEB||isPRB)endpoint = `${OPTCG_BASE}/sets/card/${encodeURIComponent(code)}/`;
+    else                 endpoint = `${OPTCG_BASE}/sets/card/${encodeURIComponent(code)}/`;
+
+    const res = await fetch(endpoint);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !data.length) return null;
+
+    // Try to match variant keyword — SP, manga, alt art, sec, etc.
+    let match = null;
+    if (variant && variant !== 'base') {
+      const kw = variant.toLowerCase();
+      // Try exact keyword match first
+      match = data.find(d => d.card_name?.toLowerCase().includes(kw));
+      // SP cards sometimes listed as "Special" or "Parallel"
+      if (!match && kw === 'sp') {
+        match = data.find(d => d.card_name?.toLowerCase().includes('special') ||
+                               d.card_name?.toLowerCase().includes('parallel'));
+      }
+      // Manga rare sometimes listed as "Manga" or "★"
+      if (!match && kw === 'manga') {
+        match = data.find(d => d.card_name?.toLowerCase().includes('manga') ||
+                               d.card_name?.includes('★'));
+      }
+      // Alt art / SEC
+      if (!match && (kw === 'alt art' || kw === 'sec')) {
+        match = data.find(d => d.card_name?.toLowerCase().includes('alt') ||
+                               d.card_name?.toLowerCase().includes('alternate'));
+      }
+    }
+    // Pick highest-value variant if no match (usually last in array = rarest)
+    if (!match) match = data[data.length - 1];
+
+    return match.image_url || null;
+  } catch(e) { return null; }
+}
+
+async function tryBandaiDirect(code) {
+  // Bandai hosts images at a predictable URL — works for base/SEC/SR cards
+  const domains = [
+    'https://en.onepiece-cardgame.com',
+    'https://asia-en.onepiece-cardgame.com',
+  ];
+  for (const domain of domains) {
+    const url = `${domain}/images/cardlist/card/${code}.png`;
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      if (res.ok) return url;
+    } catch(e) {}
+  }
+  return null;
+}
+
+async function tryOptcgDecks(code, variant) {
+  try {
+    const endpoint = `${OPTCG_BASE}/decks/card/${encodeURIComponent(code)}/`;
+    const res = await fetch(endpoint);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !data.length) return null;
+    return data[data.length - 1].image_url || data[0].image_url || null;
+  } catch(e) { return null; }
+}
+
+// ── FETCH IMAGE BLOB AND UPLOAD TO SUPABASE STORAGE ───────────
+async function uploadImageToStorage(imageUrl, storagePath, sbUrl, sbKey) {
+  // Fetch the image
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error('Image fetch failed: ' + imgRes.status);
+  const blob = await imgRes.blob();
+  const contentType = blob.type || 'image/jpeg';
+
+  // Upload to Supabase Storage
+  const uploadRes = await fetch(`${sbUrl}/storage/v1/object/card-images/${storagePath}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${sbKey}`,
+      'Content-Type': contentType,
+      'x-upsert': 'true'   // overwrite if exists
+    },
+    body: blob
+  });
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json().catch(() => ({}));
+    throw new Error(err.error || uploadRes.status);
+  }
+
+  // Return the public URL
+  return `${sbUrl}/storage/v1/object/public/card-images/${storagePath}`;
+}
+
+// ── UPDATE CARD IMAGE_URL IN SUPABASE ─────────────────────────
+async function updateCardImageUrl(cardId, imageUrl, sbUrl, sbKey) {
+  const res = await fetch(`${sbUrl}/rest/v1/cards?id=eq.${cardId}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': sbKey,
+      'Authorization': `Bearer ${sbKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ image_url: imageUrl })
+  });
+  if (!res.ok) throw new Error('DB update failed: ' + await res.text());
+}
+
+// ── MAIN FETCH LOOP ────────────────────────────────────────────
+async function runFetch() {
+  const { url, key } = sb();
+  if (!url || !key) { alert('Enter Supabase URL and service role key first.'); return; }
+
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('logLines').innerHTML = '';
+  document.getElementById('previewGrid').innerHTML = '';
+  stats = { total:0, ok:0, skip:0, err:0 };
+  updateStats();
+
+  log('Loading cards from Supabase…', 'info');
+  let cards;
+  try { cards = await getCards(); }
+  catch(e) { log('Failed to load cards: ' + e.message, 'err'); document.getElementById('runBtn').disabled=false; return; }
+
+  // Dedupe by code+variant — only fetch image once per unique card code+variant
+  const seen = new Set();
+  const unique = [];
+  for (const card of cards) {
+    if (card.grade !== 'raw') continue; // only need one image per card, raw version is fine
+    const key2 = `${card.code}::${card.variant||'base'}`;
+    if (seen.has(key2)) continue;
+    seen.add(key2);
+    unique.push(card);
+  }
+
+  stats.total = unique.length;
+  log(`Found ${cards.length} cards → ${unique.length} unique code+variant combos to fetch`, 'info');
+  updateStats();
+
+  const missed = []; // track cards with no image found anywhere
+
+  for (const card of unique) {
+    const codeLabel = `${card.code} (${card.variant||'base'})`;
+
+    // Skip if already has a Supabase storage URL
+    if (card.image_url && card.image_url.includes('supabase.co/storage')) {
+      log(`✓ skip  ${codeLabel} — already stored`, 'skip');
+      stats.skip++; updateStats(); continue;
+    }
+
+    // Get image URL — tries OPTCG API, then Bandai direct, then deck endpoint
+    await new Promise(r => setTimeout(r, 350)); // rate limit
+    const optcgUrl = await getOptcgImageUrl(card.code, card.variant);
+    if (!optcgUrl) {
+      log(`✗ miss  ${codeLabel} — not found in any source`, 'skip');
+      missed.push(codeLabel);
+      stats.err++; updateStats(); continue;
+    }
+
+    // Upload to Supabase Storage
+    const ext = optcgUrl.split('.').pop().split('?')[0] || 'jpg';
+    const filename = `${card.code.replace(/\//g,'-')}_${(card.variant||'base').replace(/ /g,'-')}.${ext}`;
+    try {
+      const storedUrl = await uploadImageToStorage(optcgUrl, filename, url, key);
+      await updateCardImageUrl(card.id, storedUrl, url, key);
+      log(`✓ ok    ${codeLabel}`, 'ok');
+      stats.ok++;
+      addPreview(card.code, storedUrl);
+    } catch(e) {
+      log(`✗ err   ${codeLabel} — ${e.message}`, 'err');
+      stats.err++;
+    }
+    updateStats();
+  }
+
+  log(`\n✓ Done! ${stats.ok} stored · ${stats.skip} skipped · ${stats.err} no image`, 'info');
+  if (missed.length) {
+    log(`\nCards with no image (JP-only/promos — need manual upload):`, 'info');
+    missed.forEach(m => log(`  · ${m}`, 'skip'));
+  }
+  document.getElementById('runBtn').disabled = false;
+}
+
+// ── CHECK EXISTING ─────────────────────────────────────────────
+async function checkExisting() {
+  const { url, key } = sb();
+  if (!url || !key) { alert('Enter credentials first.'); return; }
+  document.getElementById('logLines').innerHTML = '';
+  document.getElementById('log').style.display = 'block';
+  log('Checking existing images…', 'info');
+  try {
+    const cards = await getCards();
+    const withImg = cards.filter(c => c.image_url);
+    const without = cards.filter(c => !c.image_url);
+    log(`${cards.length} total cards`, 'info');
+    log(`${withImg.length} have images stored`, 'ok');
+    log(`${without.length} missing images`, without.length > 0 ? 'err' : 'ok');
+    if (without.length) {
+      without.slice(0,10).forEach(c => log(`  · ${c.code} (${c.variant||'base'}) ${c.grade}`, 'skip'));
+      if (without.length > 10) log(`  … and ${without.length - 10} more`, 'skip');
+    }
+    // Show previews of stored ones
+    document.getElementById('previewGrid').innerHTML = '';
+    withImg.slice(0, 12).forEach(c => addPreview(c.code, c.image_url));
+  } catch(e) { log('Error: ' + e.message, 'err'); }
+}
+
+// ── LOCALSTORAGE PERSISTENCE ─────────────────────────────────
+// cs_supabaseUrl shared with scanner (same key = enter once, works everywhere)
+// cs_supabaseServiceKey = service role key for writes (image fetcher only)
+window.addEventListener('load', () => {
+  const savedUrl = localStorage.getItem('cs_supabaseUrl');
+  const savedKey = localStorage.getItem('cs_supabaseServiceKey');
+  if (savedUrl) document.getElementById('sbUrl').value = savedUrl;
+  if (savedKey) document.getElementById('sbKey').value = savedKey;
+
+  document.getElementById('sbUrl').addEventListener('change', e => {
+    localStorage.setItem('cs_supabaseUrl', e.target.value.trim());
+  });
+  document.getElementById('sbKey').addEventListener('change', e => {
+    localStorage.setItem('cs_supabaseServiceKey', e.target.value.trim());
+  });
+});
+</script>
+</body>
+</html>
