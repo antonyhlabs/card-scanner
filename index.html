@@ -156,6 +156,19 @@ header{padding:16px 16px 12px;border-bottom:1px solid var(--border);
 .rf-chip.c-var{border-color:rgba(0,212,170,.4);}
 .result-name{font-size:17px;font-weight:600;color:var(--text);}
 
+/* ── CARD IMAGE ── */
+.card-image-wrap{position:relative;width:100%;background:var(--bg);
+  border-bottom:1px solid var(--border);overflow:hidden;max-height:200px;
+  display:flex;align-items:center;justify-content:center;}
+.card-image{width:auto;height:200px;object-fit:contain;display:block;
+  transition:opacity .3s;}
+.card-image.loading{opacity:0;}
+.card-image-placeholder{width:100%;height:140px;display:flex;align-items:center;
+  justify-content:center;color:var(--muted);font-size:11px;font-family:var(--mono);}
+.card-image-badge{position:absolute;top:8px;right:8px;background:rgba(13,13,20,.8);
+  border:1px solid var(--border);border-radius:6px;padding:3px 7px;
+  font-family:var(--mono);font-size:10px;color:var(--muted);backdrop-filter:blur(4px);}
+
 /* ── PRICE ROW ── */
 .price-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);}
 .price-cell{padding:12px 8px;text-align:center;border-right:1px solid var(--border);}
@@ -562,7 +575,7 @@ async function loadFromSupabase() {
   document.getElementById('sheetStatus').textContent = 'Loading from Supabase…';
   try {
     // Get all active cards
-    const cards = await supabaseFetch('cards?is_active=eq.true&select=id,code,name,character,market,grade,variant,tier,set_name,notes');
+    const cards = await supabaseFetch('cards?is_active=eq.true&select=id,code,name,character,market,grade,variant,tier,set_name,notes,image_url');
 
     // Get latest prices (latest_prices view aggregates per card+source)
     const prices = await supabaseFetch('latest_prices?select=card_id,source,currency,price,price_sgd,fetched_at');
@@ -613,7 +626,8 @@ async function loadFromSupabase() {
         jp_sgd:       jpSgd ? String(Math.round(jpSgd)) : '',
         en_sgd:       enSgd ? String(Math.round(enSgd)) : '',
         sources_used: sources,
-        updated_at:   dateStr
+        updated_at:   dateStr,
+        image_url:    card.image_url || null
       };
     });
 
@@ -967,8 +981,19 @@ function renderResult(row, parsed, idx, total) {
 
   const card = document.createElement('div');
   card.className = 'result-card';
+
+  // Card image block
+  const imageHtml = row.image_url
+    ? `<div class="card-image-wrap">
+        <img class="card-image loading" src="${row.image_url}"
+          onload="this.classList.remove('loading')"
+          onerror="this.parentElement.innerHTML='<div class=card-image-placeholder>No image</div>'">
+        <div class="card-image-badge">${row.code}</div>
+      </div>`
+    : '';
   card.innerHTML = `
     ${total>1?`<div class="card-idx-bar"><span class="card-idx-badge">Card ${idx+1} of ${total}</span></div>`:''}
+    ${imageHtml}
     <div class="result-header">
       <div class="result-fields">${chipsHtml}</div>
       <div class="result-name">${cardName}</div>
